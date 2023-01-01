@@ -8,7 +8,7 @@ arg_parser.add_argument("-t", metavar="total_threads", type=int, help="Specifies
 
 arg_parser.add_argument("-r", metavar="total_retries", type=int, help="Specifies how many times a thread should attempt to access a URL after a failure before giving up. (A common failure case is a timeout). Default 3.", default=3)
 
-arg_parser.add_argument("-rw", metavar="retry_wait_time_seconds", type=int, help="NOTE: This is only applicable if 'total_retries' is > 1. Specifies (in seconds) how long a thread should wait after a failure before trying to access a URL again. Default 5.", default=5)
+arg_parser.add_argument("-rw", metavar="retry_wait_time_seconds", type=int, help="NOTE: This is only applicable if 'total_retries' is > 1. Specifies (in seconds) how long a thread should wait after a failure before trying to access a URL again. Default 3.", default=3)
 
 arg_parser.add_argument("-ct", metavar="connection_timeout_seconds", type=int, help="Specifies (in seconds) how long a thread should wait for a response from a URL before aborting. Behaviour after aborting is dependent on 'total_retries' and 'retry_wait_time_seconds'. Default 3.", default=3)
 
