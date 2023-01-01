@@ -123,27 +123,28 @@ class AbstractMultithreadRequester(abc.ABC):
         def f():
             response_data = requests.get(thread_data_object.url, timeout=self.CONNECTION_TIMEOUT_SECONDS, stream=True)
             if response_data.status_code not in self.STATUS_CODE_CHECKER:
-                raise Exception
+                return False
             thread_data_object.update_status(True, response_data)
             return True    
         self.run_retriable_task(f, [])
         return thread_data_object
 
     # Target function must return True when it has successfully completed.
-    def run_retriable_task(self, target_function, target_function_arg_list):
+    def run_retriable_task(self, target_function, target_function_arg_list, exception_type=Exception):
         """
         This function will attempt to run "target_function". If there is an error, it will wait for RETRY_WAIT_TIME_SECONDS and try again up to TOTAL_RETRIES, which is specified by the user supplied program arguments
         "target_function" must return True on success and it can either return False or raise an exception on failure.
-        This function wraps "target_function" in a general try ... except Exception block
+        By default, this function wraps "target_function" in a general try ... except Exception block, but a different Exception type can be provided
         """        
         current_try = 0
         while current_try < self.TOTAL_RETRIES:
             try:
                 if target_function(*target_function_arg_list) == True:
                     return True
-            except Exception:
-                current_try = current_try + 1
-                time.sleep(self.RETRY_WAIT_TIME_SECONDS)
+            except exception_type:
+                pass
+            current_try = current_try + 1
+            time.sleep(self.RETRY_WAIT_TIME_SECONDS)
         return False
 
     @abc.abstractmethod
