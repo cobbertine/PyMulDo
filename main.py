@@ -15,6 +15,7 @@ arg_list = [args.url_list_file, args.total_threads, args.total_retries, args.ret
 # Create object and launch e.g.
 # get_web_files_object = get_web_files.GetWebFiles(*arg_list)
 # get_web_files_object.launch_workers()
+# or any other class you define...
 
 
 get_web_files_object = get_web_files.GetWebFiles(*arg_list)
