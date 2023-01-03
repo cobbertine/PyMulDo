@@ -134,7 +134,7 @@ class AbstractMultithreadRequester(abc.ABC):
         The entry function for each thread as configured by ThreadPoolExecutor
         It will attempt to establish a connection to the specified URL and then handle that connection, with the behaviour of this process controlled by the user supplied program arguments and the implementation of "handle_successful_connection"
         """    
-        if self.run_retriable_task(self.get_url_resource, [thread_data_object]) == True:
+        if self.run_retriable_task(self.get_url_resource, thread_data_object) == True:
             thread_data_object.success = self.handle_successful_connection(thread_data_object)
         # "data" is the result of a call to a request function where "stream=True" has been set. Therefore, unless the data object is consumed entirely, it is necessary to call the close function on it once work has been complete.
         if thread_data_object.data is not None:
@@ -149,7 +149,7 @@ class AbstractMultithreadRequester(abc.ABC):
         return True    
 
     # Target function must return True when it has successfully completed.
-    def run_retriable_task(self, target_function, target_function_arg_list=[], exception_type=Exception):
+    def run_retriable_task(self, target_function, *target_function_arg_list, exception_type=Exception):
         """
         This function will attempt to run "target_function". If there is an error, it will wait for RETRY_WAIT_TIME_SECONDS and try again up to TOTAL_RETRIES, which is specified by the user supplied program arguments
         "target_function" must return True on success and it can either return False or raise an exception on failure.
