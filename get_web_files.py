@@ -9,4 +9,4 @@ class GetWebFiles(abstract_multithread_requester.AbstractMultithreadRequester):
         return True
         
     def handle_successful_connection(self, thread_data_object):
-        return self.run_retriable_task(self.write_all_data_to_disk, thread_data_object)
+        return self.repeat_on_failure(self.write_all_data_to_disk, thread_data_object)
