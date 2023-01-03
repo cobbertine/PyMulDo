@@ -14,8 +14,14 @@ arg_parser.add_argument("-ct", metavar="connection_timeout_seconds", type=int, h
 
 arg_parser.add_argument("-s", metavar="status_code_whitelist", type=str, help="Specifies a list of status codes separated by a comma e.g. \"200,404\" that indicate the thread has successfully accessed the URL. If all codes are allowed, do not use this option.", default="")
 
+arg_parser.add_argument("-m", metavar="request_mode", type=str, help="Specifies if the request will be a GET or a POST. Valid options: get|post. An invalid option will use the default value. Default get", default="get")
+
+arg_parser.add_argument("-srv", action="store_true", help="This switch will indicate to the program to pass the verify=False argument to the request method. If verify=True is wanted, do not use this option. Default False", default=False)
+
+arg_parser.add_argument("-f", metavar="config_json_file", type=str, help="Specifies a JSON configuration file containing extra options to pass into the request function. If none of the extra options defined in the file are needed, do not use this option.", default="")
+
 args = arg_parser.parse_args()
-arg_list = [args.url_list_file, args.t, args.r, args.rw, args.ct, args.s]
+arg_list = [args.url_list_file, args.t, args.r, args.rw, args.ct, args.s, args.m, args.srv, args.f]
 
 # Create object and launch e.g.
 # get_web_files_object = get_web_files.GetWebFiles(*arg_list)

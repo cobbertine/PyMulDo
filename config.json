@@ -1,0 +1,27 @@
+{
+    "_comment" : 
+    {
+        "1" : "The purpose of this file is to supply a few options that aren't easy to provide on the command line.",
+        "2" : "If a particular option is not needed, do not delete it. Instead, return it/leave it in its default state.",
+        "3" : "Empty values do not affect the behaviour of the program.",
+        "4" : "This configuration file can be used to set some or all of the following options: proxies, headers, cookies and JSON POST data."
+    },
+
+    "proxies" :
+    {
+        "http": "",
+        "https": ""
+    },
+
+    "headers" : 
+    {
+    },
+
+    "cookies" :
+    {
+    },
+
+    "data" :
+    {
+    }
+}

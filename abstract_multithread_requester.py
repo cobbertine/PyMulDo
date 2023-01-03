@@ -3,6 +3,8 @@ import time
 import abc
 import requests
 import os
+import json
+import re
 
 class AbstractMultithreadRequester(abc.ABC):
     """
@@ -47,16 +49,39 @@ class AbstractMultithreadRequester(abc.ABC):
     ERROR_LOG_FILE_NAME = "error_log.txt"
     STATUS_CODE_CHECKER = None
 
-    def __init__(self, url_list_file, total_threads, total_retries, retry_wait_time_seconds, connection_timeout_seconds, status_code_whitelist):
+    def __init__(self, url_list_file, total_threads, total_retries, retry_wait_time_seconds, connection_timeout_seconds, status_code_whitelist, mode, skip_request_verification, configuration_file):
+        def validate_configuration_file():
+            while True:
+                try:
+                    self.REQUEST_FUNCTION("", **self.CONFIGURATION_OPTIONS)
+                except TypeError as unknown_option_exception:
+                    unknown_option = re.match(r"(^.+?got an unexpected keyword argument )(.+)", str(unknown_option_exception)).group(2).replace("'", "")
+                    print(f"Warning! The option '{unknown_option}' is not recognised by the request function. Skipping...")
+                    del self.CONFIGURATION_OPTIONS[unknown_option]
+                except Exception:
+                    return
+
         if total_retries <= 1:
             total_retries = 1
-            retry_wait_time_seconds = 0        
+            retry_wait_time_seconds = 0       
+
         self.URL_LIST_FILE = url_list_file
         self.TOTAL_THREADS = total_threads
         self.TOTAL_RETRIES = total_retries
         self.RETRY_WAIT_TIME_SECONDS = retry_wait_time_seconds
         self.CONNECTION_TIMEOUT_SECONDS = connection_timeout_seconds
         self.STATUS_CODE_CHECKER = AbstractMultithreadRequester.StatusCodeChecker(status_code_whitelist)         
+        self.REQUEST_FUNCTION = requests.post if mode == "post" else requests.get
+        self.SKIP_REQUEST_VERIFICATION = skip_request_verification
+
+        if len(configuration_file) == 0:
+            self.CONFIGURATION_OPTIONS = {}
+        else:
+            with open(configuration_file) as config_file_pointer:
+                self.CONFIGURATION_OPTIONS = json.load(config_file_pointer)
+            validate_configuration_file()
+        print("Configuration options loaded...")
+
 
     def launch_threads(self):
         """
@@ -121,7 +146,7 @@ class AbstractMultithreadRequester(abc.ABC):
         It will attempt to retrieve the resource from the specified URL, with the behaviour of this retrieval process controlled by the user supplied program arguments
         """        
         def f():
-            response_data = requests.get(thread_data_object.url, timeout=self.CONNECTION_TIMEOUT_SECONDS, stream=True)
+            response_data = self.REQUEST_FUNCTION(thread_data_object.url, timeout=self.CONNECTION_TIMEOUT_SECONDS, stream=True, verify=(not self.SKIP_REQUEST_VERIFICATION), **self.CONFIGURATION_OPTIONS)
             if response_data.status_code not in self.STATUS_CODE_CHECKER:
                 return False
             thread_data_object.update_status(True, response_data)
@@ -141,7 +166,7 @@ class AbstractMultithreadRequester(abc.ABC):
             try:
                 if target_function(*target_function_arg_list) == True:
                     return True
-            except exception_type:
+            except exception_type as exception_object:
                 pass
             current_try = current_try + 1
             time.sleep(self.RETRY_WAIT_TIME_SECONDS)

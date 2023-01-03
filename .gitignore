@@ -4,3 +4,4 @@
 !/*.py
 !/Pipfile
 !/Pipfile.lock
+!/*.json
