@@ -12,7 +12,7 @@ class AbstractMultithreadRequester(abc.ABC):
     """
     An abstract class that implements the functionality required to iterate over a list of URLs from a file and access the resource at each of those URLs.
     The class offers a variety of configuration options for multithreading and handling retries and wait times.
-    The only unimplemented function in this class is "process_finished_thread_data", leaving it to child classes to decide what should happen once a resource is retrieved.
+    The only unimplemented function in this class is "handle_successful_connection", leaving it to child classes to decide what should happen once a resource is retrieved.
     """    
     class ThreadDataObject:
         """
@@ -28,13 +28,6 @@ class AbstractMultithreadRequester(abc.ABC):
                 self.resource_name = url
             self.success = False
             self.data = None
-
-        def update_status(self, success, data):
-            """
-            The thread will update its status when its job is complete, indicating to the program if it has succeeded or not.
-            """            
-            self.success = success
-            self.data = data
 
     class StatusCodeChecker:
         """
@@ -84,7 +77,6 @@ class AbstractMultithreadRequester(abc.ABC):
             validate_configuration_file()
         print("Configuration options loaded...")
 
-
     def launch_threads(self):
         """
         This is essentially the entry function for this class, which initiates the retrieval process based on the user supplied program arguments.
@@ -106,7 +98,7 @@ class AbstractMultithreadRequester(abc.ABC):
                 for url in url_list_file:
                     url = url.strip()
                     if len(url) > 0:
-                        task_list.append(executor.submit(self.get_url_resource, AbstractMultithreadRequester.ThreadDataObject(url)))
+                        task_list.append(executor.submit(self.run_url_thread, AbstractMultithreadRequester.ThreadDataObject(url)))
 
             print(f"All {len(task_list)} tasks are now queued.")
             self.await_threads(task_list)
@@ -130,35 +122,34 @@ class AbstractMultithreadRequester(abc.ABC):
             thread_data_object = encapsulated_thread_data_object.result()
             if thread_data_object.success is True:
                 print(f"Thread {thread_data_object.resource_name} has returned successfully.")
-                print(f"Attempting to process results of thread '{thread_data_object.resource_name}'...")
-                if self.process_finished_thread_data(thread_data_object) == True:
-                    print(f"Thread '{thread_data_object.resource_name}' has been processed successfully.")
-                    write_outcome_to_log_file(self.SUCCESS_LOG_FILE_NAME, thread_data_object.url + "\n")
-                else:
-                    print(f"Thread '{thread_data_object.resource_name}' has been processed unsuccessfully.")
-                    write_outcome_to_log_file(self.ERROR_LOG_FILE_NAME, thread_data_object.url + "\n")
+                write_outcome_to_log_file(self.SUCCESS_LOG_FILE_NAME, thread_data_object.url + "\n")
             else:
                 print(f"Thread '{thread_data_object.resource_name}' has returned unsuccessfully.")
                 write_outcome_to_log_file(self.ERROR_LOG_FILE_NAME, thread_data_object.url + "\n")
             task_count = task_count - 1
             print(f"Remaining tasks: {task_count}")
 
-    def get_url_resource(self, thread_data_object):
+    def run_url_thread(self, thread_data_object):
         """
         The entry function for each thread as configured by ThreadPoolExecutor
-        It will attempt to retrieve the resource from the specified URL, with the behaviour of this retrieval process controlled by the user supplied program arguments
-        """        
-        def f():
-            response_data = self.REQUEST_FUNCTION(thread_data_object.url, timeout=self.CONNECTION_TIMEOUT_SECONDS, stream=True, verify=(not self.SKIP_REQUEST_VERIFICATION), **self.CONFIGURATION_OPTIONS)
-            if response_data.status_code not in self.STATUS_CODE_CHECKER:
-                return False
-            thread_data_object.update_status(True, response_data)
-            return True    
-        self.run_retriable_task(f, [])
+        It will attempt to establish a connection to the specified URL and then handle that connection, with the behaviour of this process controlled by the user supplied program arguments and the implementation of "handle_successful_connection"
+        """    
+        if self.run_retriable_task(self.get_url_resource, [thread_data_object]) == True:
+            thread_data_object.success = self.handle_successful_connection(thread_data_object)
+        # "data" is the result of a call to a request function where "stream=True" has been set. Therefore, unless the data object is consumed entirely, it is necessary to call the close function on it once work has been complete.
+        if thread_data_object.data is not None:
+            thread_data_object.data.close()
         return thread_data_object
 
+    def get_url_resource(self, thread_data_object):
+        response_data = self.REQUEST_FUNCTION(thread_data_object.url, timeout=self.CONNECTION_TIMEOUT_SECONDS, stream=True, verify=(not self.SKIP_REQUEST_VERIFICATION), **self.CONFIGURATION_OPTIONS)
+        if response_data.status_code not in self.STATUS_CODE_CHECKER:
+            return False
+        thread_data_object.data = response_data
+        return True    
+
     # Target function must return True when it has successfully completed.
-    def run_retriable_task(self, target_function, target_function_arg_list, exception_type=Exception):
+    def run_retriable_task(self, target_function, target_function_arg_list=[], exception_type=Exception):
         """
         This function will attempt to run "target_function". If there is an error, it will wait for RETRY_WAIT_TIME_SECONDS and try again up to TOTAL_RETRIES, which is specified by the user supplied program arguments
         "target_function" must return True on success and it can either return False or raise an exception on failure.
@@ -177,9 +168,9 @@ class AbstractMultithreadRequester(abc.ABC):
         return False
 
     @abc.abstractmethod
-    def process_finished_thread_data(self, thread_data_object):
+    def handle_successful_connection(self, thread_data_object):
         """
-        This is an abstract function which must be implemented by a child class. The child class implements this function to decide how returned data from a finished thread should be processed. This function must return a boolean indicating the success or failure of processing the data.
-        NOTE: "thread_data_object" is returned from a "requests.get" call, where "stream=True" has been set.
+        This is an abstract function which must be implemented by a child class. The child class implements this function to decide how a successful connection to a URL  should be handled
+        It must return a boolean indicating success or failure
         """        
         pass
