@@ -142,14 +142,19 @@ class AbstractMultithreadRequester(abc.ABC):
 
         It will attempt to establish a connection to the specified URL and then handle that connection, with the behaviour of this process controlled by the user supplied program arguments and the implementation of "handle_successful_connection"
         """    
-        if self.repeat_on_failure(self.get_url_resource, thread_data_object) == True:
+        if self.repeat_on_failure(self.connect_to_url, thread_data_object) == True:
             thread_data_object.success = self.handle_successful_connection(thread_data_object)
         # "data" is the result of a call to a request function where "stream=True" has been set. Therefore, unless the data object is consumed entirely, it is necessary to call the close function on it once work has been complete.
         if thread_data_object.data is not None:
             thread_data_object.data.close()
         return thread_data_object
 
-    def get_url_resource(self, thread_data_object):
+    def connect_to_url(self, thread_data_object):
+        """
+        This function is called by one of the threads configured by ThreadPoolExecutor
+
+        This will attempt to establish a connection to the URL, which can then be handled appropriately in the "handle_successful_connection" function
+        """
         response_data = self.REQUEST_FUNCTION(thread_data_object.url, timeout=self.CONNECTION_TIMEOUT_SECONDS, stream=True, verify=(not self.SKIP_REQUEST_VERIFICATION), **self.CONFIGURATION_OPTIONS)
         if response_data.status_code not in self.STATUS_CODE_CHECKER:
             return False
