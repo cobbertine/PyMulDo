@@ -5,6 +5,8 @@ import requests
 import os
 import json
 import re
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class AbstractMultithreadRequester(abc.ABC):
     """
@@ -19,7 +21,11 @@ class AbstractMultithreadRequester(abc.ABC):
         """        
         def __init__(self, url):
             self.url = url
-            self.resource_name = url.split("/")[-1]
+            try:
+                self.resource_name = list(filter(len, url.split("/")))[-1]
+            except Exception:
+                print(f"Possibly malformed url: {url}")
+                self.resource_name = url
             self.success = False
             self.data = None
 
@@ -103,7 +109,8 @@ class AbstractMultithreadRequester(abc.ABC):
             with open(self.URL_LIST_FILE, "r") as url_list_file:
                 for url in url_list_file:
                     url = url.strip()
-                    task_list.append(executor.submit(self.get_url_resource, AbstractMultithreadRequester.ThreadDataObject(url)))
+                    if len(url) > 0:
+                        task_list.append(executor.submit(self.get_url_resource, AbstractMultithreadRequester.ThreadDataObject(url)))
 
             print(f"All {len(task_list)} tasks are now queued.")
             self.await_threads(task_list)
