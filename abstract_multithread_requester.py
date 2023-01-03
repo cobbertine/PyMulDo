@@ -65,11 +65,7 @@ class AbstractMultithreadRequester(abc.ABC):
                     print(f"Warning! The option '{unknown_option}' is not recognised by the request function. Skipping...")
                     del self.CONFIGURATION_OPTIONS[unknown_option]
                 except Exception:
-                    return
-
-        if total_retries <= 1:
-            total_retries = 1
-            retry_wait_time_seconds = 0       
+                    return   
 
         self.URL_LIST_FILE = url_list_file
         self.TOTAL_THREADS = total_threads
@@ -169,14 +165,15 @@ class AbstractMultithreadRequester(abc.ABC):
         By default, this function wraps "target_function" in a general try ... except Exception block, but a different Exception type can be provided
         """        
         current_try = 0
-        while current_try < self.TOTAL_RETRIES:
+        while current_try <= self.TOTAL_RETRIES:
+            if current_try > 0:
+                time.sleep(self.RETRY_WAIT_TIME_SECONDS)
             try:
                 if target_function(*target_function_arg_list) == True:
                     return True
             except exception_type as exception_object:
                 pass
             current_try = current_try + 1
-            time.sleep(self.RETRY_WAIT_TIME_SECONDS)
         return False
 
     @abc.abstractmethod

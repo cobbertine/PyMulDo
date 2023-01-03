@@ -6,9 +6,9 @@ arg_parser.add_argument("url_list_file", type=str, help="Specifies a file contai
 
 arg_parser.add_argument("-t", metavar="total_threads", type=int, help="Specifies how many threads can run concurrently. Default: 1", default=1)
 
-arg_parser.add_argument("-r", metavar="total_retries", type=int, help="Specifies how many times a thread should attempt to access a URL after a failure before giving up. (A common failure case is a timeout). Default: 3", default=3)
+arg_parser.add_argument("-r", metavar="total_retries", type=int, help="Specifies how many times a thread should attempt to access a URL after a failure before giving up. (A common failure case is a timeout). Default: 1", default=1)
 
-arg_parser.add_argument("-w", metavar="retry_wait_time_seconds", type=int, help="Specifies (in seconds) how long a thread should wait after a failure before trying to access a URL again. NOTE: This is only applicable if 'total_retries' is > 1. Default: 3", default=3)
+arg_parser.add_argument("-w", metavar="retry_wait_time_seconds", type=int, help="Specifies (in seconds) how long a thread should wait after a failure before trying to access a URL again. NOTE: This is only applicable if 'total_retries' is > 0. Default: 3", default=3)
 
 arg_parser.add_argument("-c", metavar="connection_timeout_seconds", type=int, help="Specifies (in seconds) how long a thread should wait for a response from a URL before aborting. Behaviour after aborting is dependent on 'total_retries' and 'retry_wait_time_seconds'. Default: 3", default=3)
 
