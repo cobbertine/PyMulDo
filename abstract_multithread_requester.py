@@ -11,12 +11,15 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 class AbstractMultithreadRequester(abc.ABC):
     """
     An abstract class that implements the functionality required to iterate over a list of URLs from a file and access the resource at each of those URLs.
+
     The class offers a variety of configuration options for multithreading and handling retries and wait times.
+
     The only unimplemented function in this class is "handle_successful_connection", leaving it to child classes to decide what should happen once a resource is retrieved.
     """    
     class ThreadDataObject:
         """
-        A class that holds important information for each launched thread
+        A class that holds important information for each launched thread.
+
         It tells the thread what URL it should access and it allows the thread to return the resource from that URL in the member field "data"
         """        
         def __init__(self, url):
@@ -31,7 +34,8 @@ class AbstractMultithreadRequester(abc.ABC):
 
     class StatusCodeChecker:
         """
-        A class that holds what Status Codes the user has specified as OK
+        A class that holds what Status Codes the user has specified as OK.
+
         If the user has not supplied any codes, then it is assumed that all codes are OK.
         """        
         def __init__(self, status_code_whitelist):
@@ -107,8 +111,11 @@ class AbstractMultithreadRequester(abc.ABC):
     def await_threads(self, task_list):
         """
         This function is launched once all tasks are queued by the ThreadPoolExecutor.
+
         It will continously wait for a thread to complete its work and then process that thread appropriately.
+
         The function will return once all threads have finished their work and all of them have been processed.
+
         The success or failure of these threads is written to a log file.
         """        
         def write_outcome_to_log_file(file_name, outcome_text):
@@ -131,7 +138,8 @@ class AbstractMultithreadRequester(abc.ABC):
 
     def run_url_thread(self, thread_data_object):
         """
-        The entry function for each thread as configured by ThreadPoolExecutor
+        The entry function for each thread as configured by ThreadPoolExecutor.
+
         It will attempt to establish a connection to the specified URL and then handle that connection, with the behaviour of this process controlled by the user supplied program arguments and the implementation of "handle_successful_connection"
         """    
         if self.repeat_on_failure(self.get_url_resource, thread_data_object) == True:
@@ -150,8 +158,10 @@ class AbstractMultithreadRequester(abc.ABC):
 
     def repeat_on_failure(self, target_function, *target_function_arg_list, exception_type=Exception):
         """
-        This function will attempt to run "target_function". If there is an error, it will wait for RETRY_WAIT_TIME_SECONDS and try again up to TOTAL_RETRIES, which is specified by the user supplied program arguments
+        This function will attempt to run "target_function". If there is an error, it will wait for RETRY_WAIT_TIME_SECONDS and try again up to TOTAL_RETRIES, which is specified by the user supplied program arguments.
+
         "target_function" must return True on success and it can either return False or raise an exception on failure.
+
         By default, this function wraps "target_function" in a general try ... except Exception block, but a different Exception type can be provided
         """        
         current_try = 0
@@ -169,7 +179,8 @@ class AbstractMultithreadRequester(abc.ABC):
     @abc.abstractmethod
     def handle_successful_connection(self, thread_data_object):
         """
-        This is an abstract function which must be implemented by a child class. The child class implements this function to decide how a successful connection to a URL  should be handled
-        It must return a boolean indicating success or failure
+        This is an abstract function which must be implemented by a child class. The child class implements this function to decide how a successful connection to a URL  should be handled.
+
+        It must return a boolean indicating success or failure.
         """        
         pass
