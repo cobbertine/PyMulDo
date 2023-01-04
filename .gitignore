@@ -5,3 +5,5 @@
 !/Pipfile
 !/Pipfile.lock
 !/*.json
+!/README.md
+!/requirements.txt
