@@ -1,4 +1,4 @@
-# PyMulDo - Python Multi-Downloader
+# Python Multithreaded Downloader
 
 ## Requirements
 This was developed with Python 3.10.7
